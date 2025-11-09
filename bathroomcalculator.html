@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bathroom Load Calculator (NSCP 2015)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for number input arrows */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* Style for the main result values */
+        .main-result {
+            @apply font-bold text-3xl text-green-400;
+        }
+        .lookup-value {
+            @apply bg-gray-700 p-4 rounded-lg text-center;
+        }
+        .total-kn-result {
+            @apply mt-4 p-3 bg-gray-900 rounded-lg;
+        }
+    </style>
+    <!-- Load Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 md:p-8">
+
+    <div class="max-w-2xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <header class="text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-blue-400">Bathroom Load Calculator</h1>
+            <p class="text-sm text-gray-400 mt-2">Based on NSCP 2015 Provisions (Tables 204 & 205)</p>
+        </header>
+
+        <!-- Optional Area Input -->
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <label for="area" class="block text-sm font-medium text-gray-300 mb-1">Optional: Bathroom Area (m²)</label>
+            <input type="number" id="area" placeholder="e.g., 6.5" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <!-- SDL Calculator -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl space-y-6">
+            <h2 class="text-xl font-bold text-green-400 border-b border-gray-700 pb-3">1. Superimposed Dead Load (SDL)</h2>
+            <p class="text-sm text-gray-400 -mt-4">Calculate the pressure load (kPa) from floor finishes. Wall loads are calculated separately.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="sdl-finish" class="block text-sm font-medium text-gray-300 mb-1">Floor Finish (kPa)</label>
+                    <input type="number" id="sdl-finish" value="0.77" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">e.g., 0.77 for 20mm tile on 13mm mortar</p>
+                </div>
+                <div>
+                    <label for="sdl-waterproofing" class="block text-sm font-medium text-gray-300 mb-1">Waterproofing (kPa)</label>
+                    <input type="number" id="sdl-waterproofing" value="0.10" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="sdl-ceiling-mep" class="block text-sm font-medium text-gray-300 mb-1">Ceiling Below & MEP (kPa)</label>
+                    <input type="number" id="sdl-ceiling-mep" value="0.25" step="0.01" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- SDL Result -->
+            <div class="pt-6 border-t border-gray-700 text-center">
+                <label class="block text-sm font-medium text-gray-300">Total Floor SDL (Pressure Load)</label>
+                <div class="main-result mt-1">
+                    <span id="sdl-result-total-pressure">0.00</span> kPa
+                </div>
+                <div id="sdl-total-kn-container" class="total-kn-result hidden">
+                    <label class="block text-xs font-medium text-gray-400">Total SDL for Area</label>
+                    <div class="text-2xl font-bold text-gray-200">
+                        <span id="sdl-result-total-kn">0.00</span> kN
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LL Calculator -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-2xl space-y-6">
+            <h2 class="text-xl font-bold text-green-400 border-b border-gray-700 pb-3">2. Live Load (LL)</h2>
+            <p class="text-sm text-gray-400 -mt-4">Select the bathroom's location to find the NSCP 2015, Table 205-1 requirement.</p>
+            
+            <div>
+                <label for="ll-location" class="block text-sm font-medium text-gray-300 mb-1">Bathroom Location</label>
+                <select id="ll-location" class="w-full bg-gray-700 border border-gray-600 rounded-md p-3 text-white focus:ring-blue-500 focus:border-blue-500">
+                    <option value="office">In an Office (same as office load)</option>
+                    <option value="public">Public Restroom (e.g., Lobby, Assembly)</option>
+                    <option value="residential">In a Private Residence</option>
+                </select>
+            </div>
+
+            <!-- LL Results -->
+            <div class="pt-6 border-t border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="lookup-value">
+                    <label class="block text-sm font-medium text-gray-300">Uniform Live Load (ULL)</label>
+                    <div class="main-result mt-1">
+                        <span id="ll-result-ull">0.0</span> <span class="text-2xl">kPa</span>
+                    </div>
+                    <div id="ll-total-kn-container" class="total-kn-result hidden">
+                        <label class="block text-xs font-medium text-gray-400">Total Uniform LL for Area</label>
+                        <div class="text-2xl font-bold text-gray-200">
+                            <span id="ll-result-total-kn">0.00</span> kN
+                        </div>
+                    </div>
+                </div>
+                <div class="lookup-value">
+                    <label class="block text-sm font-medium text-gray-300">Concentrated Live Load (CLL)</label>
+                    <div class="main-result mt-1">
+                        <span id="ll-result-cll">0.0</span> <span class="text-2xl">kN</span>
+                    </div>
+                    <p id="cll-note" class="text-xs text-gray-400 mt-1"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Disclaimer -->
+        <div class="mt-2 text-center">
+            <p class="text-xs text-gray-500">
+                <strong>Note:</strong> Bathroom partition wall loads (e.g., CHB, tiles) must be calculated separately (as a line load) and added to the design.
+            </p>
+        </div>
+
+    </div> <!-- /Max-width container -->
+
+    <script>
+        // --- Get Common Elements ---
+        const areaInput = document.getElementById('area');
+
+        // --- Get SDL Elements ---
+        const sdlInputs = [
+            document.getElementById('sdl-finish'),
+            document.getElementById('sdl-waterproofing'),
+            document.getElementById('sdl-ceiling-mep')
+        ];
+        const sdlResultTotalPressure = document.getElementById('sdl-result-total-pressure');
+        const sdlTotalKnContainer = document.getElementById('sdl-total-kn-container');
+        const sdlResultTotalKn = document.getElementById('sdl-result-total-kn');
+
+        // --- Get LL Elements ---
+        const llLocation = document.getElementById('ll-location');
+        const llResultUll = document.getElementById('ll-result-ull');
+        const llResultCll = document.getElementById('ll-result-cll');
+        const cllNote = document.getElementById('cll-note');
+        const llTotalKnContainer = document.getElementById('ll-total-kn-container');
+        const llResultTotalKn = document.getElementById('ll-result-total-kn');
+
+        // --- LL Data (NSCP 2015, Table 205-1) ---
+        const llData = {
+            office: {
+                ull: 2.4,
+                cll: 9.0,
+                note: "(Per Office Occupancy)"
+            },
+            public: {
+                ull: 4.8,
+                cll: 9.0,
+                note: "(Per Lobby/Assembly Occupancy)"
+            },
+            residential: {
+                ull: 1.9,
+                cll: 0,
+                note: "(Per Residential Occupancy)"
+            }
+        };
+
+        // --- Calculation Functions ---
+
+        function calculateSDL() {
+            const finish = parseFloat(document.getElementById('sdl-finish').value) || 0;
+            const waterproofing = parseFloat(document.getElementById('sdl-waterproofing').value) || 0;
+            const ceilingMep = parseFloat(document.getElementById('sdl-ceiling-mep').value) || 0;
+            const area = parseFloat(areaInput.value) || 0;
+
+            const totalSdlPressure = finish + waterproofing + ceilingMep;
+            sdlResultTotalPressure.textContent = totalSdlPressure.toFixed(2);
+
+            if (area > 0) {
+                const totalSdlKn = totalSdlPressure * area;
+                sdlResultTotalKn.textContent = totalSdlKn.toFixed(2);
+                sdlTotalKnContainer.classList.remove('hidden');
+            } else {
+                sdlTotalKnContainer.classList.add('hidden');
+            }
+        }
+
+        function calculateLL() {
+            const location = llLocation.value;
+            const data = llData[location];
+            const area = parseFloat(areaInput.value) || 0;
+
+            if (data) {
+                llResultUll.textContent = data.ull.toFixed(1);
+                llResultCll.textContent = data.cll.toFixed(1);
+                cllNote.textContent = data.note;
+
+                if (area > 0) {
+                    const totalLlKn = data.ull * area;
+                    llResultTotalKn.textContent = totalLlKn.toFixed(2);
+                    llTotalKnContainer.classList.remove('hidden');
+                } else {
+                    llTotalKnContainer.classList.add('hidden');
+                }
+            }
+        }
+        
+        function runAllCalculations() {
+            calculateSDL();
+            calculateLL();
+        }
+
+        // --- Event Listeners ---
+        sdlInputs.forEach(input => input.addEventListener('input', runAllCalculations));
+        llLocation.addEventListener('input', runAllCalculations);
+        areaInput.addEventListener('input', runAllCalculations);
+
+        // --- Initial Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial LL selection and run calcs
+            llLocation.value = 'office';
+            runAllCalculations();
+        });
+
+    </script>
+</body>
+</html>
